@@ -704,23 +704,32 @@ FSP_API NTSTATUS FspMountRemove(FSP_MOUNT_DESC *Desc);
  *
  * See https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html (https://archive.is/mJfFX)
  */
-#pragma warning(push)
-#pragma warning(disable:4210)           /* nonstandard extension used: function given file scope */
+#if _MSC_VER >= 1910 /* VS2017 or later */
+__int32 __iso_volatile_load32(const volatile __int32 *);
+void __iso_volatile_store32(volatile __int32 *, __int32);
+__int64 __iso_volatile_load64(const volatile __int64 *);
+void __iso_volatile_store64(volatile __int64 *, __int64);
+#define FSP_ATOMIC_VOLATILE_LOAD32(p)   __iso_volatile_load32(p)
+#define FSP_ATOMIC_VOLATILE_STORE32(p,v)__iso_volatile_store32(p,v)
+#define FSP_ATOMIC_VOLATILE_LOAD64(p)   __iso_volatile_load64(p)
+#define FSP_ATOMIC_VOLATILE_STORE64(p,v)__iso_volatile_store64(p,v)
+#else
+#define FSP_ATOMIC_VOLATILE_LOAD32(p)   (*(p))
+#define FSP_ATOMIC_VOLATILE_STORE32(p,v)(*(p) = (v))
+#define FSP_ATOMIC_VOLATILE_LOAD64(p)   (*(p))
+#define FSP_ATOMIC_VOLATILE_STORE64(p,v)(*(p) = (v))
+#endif
 static inline INT32 FspAtomicLoad32(INT32 volatile *p)
 {
 #if defined(_M_ARM64)
-    __int32 __iso_volatile_load32(const volatile __int32 *);
     void __dmb(unsigned int);
-
-    INT32 v = __iso_volatile_load32(p);
+    INT32 v = FSP_ATOMIC_VOLATILE_LOAD32(p);
     __dmb(0xb);
     return v;
 
 #elif defined(_M_X64) || defined(_M_IX86)
-    __int32 __iso_volatile_load32(const volatile __int32 *);
     void _ReadWriteBarrier(void);
-
-    INT32 v = __iso_volatile_load32(p);
+    INT32 v = FSP_ATOMIC_VOLATILE_LOAD32(p);
     _ReadWriteBarrier();
     return v;
 
@@ -729,16 +738,13 @@ static inline INT32 FspAtomicLoad32(INT32 volatile *p)
 static inline VOID FspAtomicStore32(INT32 volatile *p, INT32 v)
 {
 #if defined(_M_ARM64)
-    void __iso_volatile_store32(volatile __int32 *, __int32);
     void __dmb(unsigned int);
-
     __dmb(0xb);
-    __iso_volatile_store32(p, v);
+    FSP_ATOMIC_VOLATILE_STORE32(p, v);
     __dmb(0xb);
 
 #elif defined(_M_X64) || defined(_M_IX86)
     long _InterlockedExchange(long volatile *, long);
-
     _InterlockedExchange((long volatile *)p, v);
 
 #endif
@@ -746,26 +752,20 @@ static inline VOID FspAtomicStore32(INT32 volatile *p, INT32 v)
 static inline VOID *FspAtomicLoadPointer(VOID *volatile *p)
 {
 #if defined(_M_ARM64)
-    __int64 __iso_volatile_load64(const volatile __int64 *);
     void __dmb(unsigned int);
-
-    VOID *v = (VOID *)__iso_volatile_load64((__int64 volatile *)(p));
+    VOID *v = (VOID *)FSP_ATOMIC_VOLATILE_LOAD64((__int64 volatile *)(p));
     __dmb(0xb);
     return v;
 
 #elif defined(_M_X64)
-    __int64 __iso_volatile_load64(const volatile __int64 *);
     void _ReadWriteBarrier(void);
-
-    VOID *v = (VOID *)__iso_volatile_load64((__int64 volatile *)(p));
+    VOID *v = (VOID *)FSP_ATOMIC_VOLATILE_LOAD64((__int64 volatile *)(p));
     _ReadWriteBarrier();
     return v;
 
 #elif defined(_M_IX86)
-    __int32 __iso_volatile_load32(const volatile __int32 *);
     void _ReadWriteBarrier(void);
-
-    VOID *v = (VOID *)__iso_volatile_load32((__int32 volatile *)(p));
+    VOID *v = (VOID *)FSP_ATOMIC_VOLATILE_LOAD32((__int32 volatile *)(p));
     _ReadWriteBarrier();
     return v;
 
@@ -774,21 +774,17 @@ static inline VOID *FspAtomicLoadPointer(VOID *volatile *p)
 static inline VOID FspAtomicStorePointer(VOID *volatile *p, VOID *v)
 {
 #if defined(_M_ARM64)
-    void __iso_volatile_store64(volatile __int64 *, __int64);
     void __dmb(unsigned int);
-
     __dmb(0xb);
-    __iso_volatile_store64((__int64 volatile *)(p), (__int64)(v));
+    FSP_ATOMIC_VOLATILE_STORE64((__int64 volatile *)(p), (__int64)(v));
     __dmb(0xb);
 
 #elif defined(_M_X64) || defined(_M_IX86)
     void *_InterlockedExchangePointer(void *volatile *, void *);
-
     _InterlockedExchangePointer(p, v);
 
 #endif
 }
-#pragma warning(pop)
 
 #ifdef __cplusplus
 }
