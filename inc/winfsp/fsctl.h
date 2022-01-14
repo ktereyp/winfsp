@@ -699,6 +699,99 @@ FSP_API NTSTATUS FspMountSet(FSP_MOUNT_DESC *Desc);
 FSP_API NTSTATUS FspMountRemove(FSP_MOUNT_DESC *Desc);
 #endif
 
+/*
+ * Atomics
+ *
+ * See https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html (https://archive.is/mJfFX)
+ */
+static inline INT32 FspAtomicLoad32(INT32 volatile *p)
+{
+#if defined(_M_ARM64)
+    __int32 __iso_volatile_load32(const volatile __int32 *);
+    void __dmb(unsigned int);
+
+    INT32 v = __iso_volatile_load32(p);
+    __dmb(0xb);
+    return v;
+
+#elif defined(_M_X64) || defined(_M_IX86)
+    __int32 __iso_volatile_load32(const volatile __int32 *);
+    void _ReadWriteBarrier(void);
+
+    INT32 v = __iso_volatile_load32(p);
+    _ReadWriteBarrier();
+    return v;
+
+#endif
+}
+static inline VOID FspAtomicStore32(INT32 volatile *p, INT32 v)
+{
+#if defined(_M_ARM64)
+    void __iso_volatile_store32(volatile __int32 *, __int32);
+    void __dmb(unsigned int);
+
+    __dmb(0xb);
+    __iso_volatile_store32(p, v);
+    __dmb(0xb);
+
+#elif defined(_M_X64) || defined(_M_IX86)
+    long _InterlockedExchange(long volatile *, long);
+
+    _InterlockedExchange((long volatile *)p, v);
+
+#endif
+}
+static inline VOID *FspAtomicLoadPointer(VOID *volatile *p)
+{
+#if defined(_M_ARM64)
+    __int64 __iso_volatile_load64(const volatile __int64 *);
+    void __dmb(unsigned int);
+
+    VOID *v = (VOID *)__iso_volatile_load64((__int64 volatile *)(p));
+    __dmb(0xb);
+    return v;
+
+#elif defined(_M_X64)
+    __int64 __iso_volatile_load64(const volatile __int64 *);
+    void _ReadWriteBarrier(void);
+
+    VOID *v = (VOID *)__iso_volatile_load64((__int64 volatile *)(p));
+    _ReadWriteBarrier();
+    return v;
+
+#elif defined(_M_IX86)
+    __int32 __iso_volatile_load32(const volatile __int32 *);
+    void _ReadWriteBarrier(void);
+
+    VOID *v = (VOID *)__iso_volatile_load32((__int32 volatile *)(p));
+    _ReadWriteBarrier();
+    return v;
+
+#endif
+}
+static inline VOID FspAtomicStorePointer(VOID *volatile *p, VOID *v)
+{
+#if defined(_M_ARM64)
+    void __iso_volatile_store64(volatile __int64 *, __int64);
+    void __dmb(unsigned int);
+
+    __dmb(0xb);
+    __iso_volatile_store64((__int64 volatile *)(p), (__int64)(v));
+    __dmb(0xb);
+
+#elif defined(_M_X64)
+    void *_InterlockedExchangePointer(void *volatile *, void *);
+
+    _InterlockedExchangePointer(p, v);
+
+#elif defined(_M_IX86)
+    void *_InterlockedExchangePointer(void *volatile *, void *);
+
+    _InterlockedExchangePointer(p, v);
+
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
