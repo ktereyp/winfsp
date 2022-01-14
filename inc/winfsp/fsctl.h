@@ -779,12 +779,7 @@ static inline VOID FspAtomicStorePointer(VOID *volatile *p, VOID *v)
     __iso_volatile_store64((__int64 volatile *)(p), (__int64)(v));
     __dmb(0xb);
 
-#elif defined(_M_X64)
-    void *_InterlockedExchangePointer(void *volatile *, void *);
-
-    _InterlockedExchangePointer(p, v);
-
-#elif defined(_M_IX86)
+#elif defined(_M_X64) || defined(_M_IX86)
     void *_InterlockedExchangePointer(void *volatile *, void *);
 
     _InterlockedExchangePointer(p, v);
