@@ -704,6 +704,8 @@ FSP_API NTSTATUS FspMountRemove(FSP_MOUNT_DESC *Desc);
  *
  * See https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html (https://archive.is/mJfFX)
  */
+#pragma warning(push)
+#pragma warning(disable:4210)           /* nonstandard extension used: function given file scope */
 static inline INT32 FspAtomicLoad32(INT32 volatile *p)
 {
 #if defined(_M_ARM64)
@@ -786,6 +788,7 @@ static inline VOID FspAtomicStorePointer(VOID *volatile *p, VOID *v)
 
 #endif
 }
+#pragma warning(pop)
 
 #ifdef __cplusplus
 }

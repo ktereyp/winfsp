@@ -40,6 +40,13 @@ NTSTATUS DriverEntry(
 
     FSP_TRACE_INIT();
 
+    INT32 v = 0;
+    FspAtomicLoad32(&v);
+    FspAtomicStore32(&v, 0);
+    PVOID p = 0;
+    FspAtomicLoadPointer(&p);
+    FspAtomicStorePointer(&p, 0);
+
     /* setup the driver object */
     DriverObject->MajorFunction[IRP_MJ_CREATE] = FspCreate;
     DriverObject->MajorFunction[IRP_MJ_CLOSE] = FspClose;
