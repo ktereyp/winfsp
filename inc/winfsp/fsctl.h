@@ -704,7 +704,7 @@ FSP_API NTSTATUS FspMountRemove(FSP_MOUNT_DESC *Desc);
  *
  * See https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html (https://archive.is/mJfFX)
  */
-#if _MSC_VER >= 1910 /* VS2017 or later */
+#if _MSC_VER >= 1920 /* VS2019 or later */
 __int32 __iso_volatile_load32(const volatile __int32 *);
 void __iso_volatile_store32(volatile __int32 *, __int32);
 __int64 __iso_volatile_load64(const volatile __int64 *);
